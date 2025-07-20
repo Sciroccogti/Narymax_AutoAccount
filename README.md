@@ -35,7 +35,7 @@ AutoAccount_V1.4.2
 ![](res/img/sui_panchart.png)
 
 ## 需要条件
-下载relese文件夹下面的[rumMain.exe](release/AutoAccount.exe)，放到英文路径下面 
+下载release文件夹下面的[rumMain.exe](release/AutoAccount.exe)，放到英文路径下面 
 
 ## 使用方法
 1. 导出微信、支付宝原始账单，准备csv账单（手机可以操作）  
@@ -51,7 +51,7 @@ AutoAccount_V1.4.2
 
 ## 其它功能介绍
 1. [上传本地网页，生成分类模板](doc/sui_html_to_xls.md)
-2. [加载cinfig文件，config文件及关键字说明](doc/user_config.md)
+2. [加载config文件，config文件及关键字说明](doc/user_config.md)
 3. [创建config文件](doc/create_config.md)
 
 
