@@ -83,7 +83,7 @@ python 3.6.15
 [环境依赖](requirements.txt)
 
 ## 配置文件说明
-config.xls
+config.xlsx
 - user: 用户名字，记账人 
 - character: 通常就是字母，会添加到付款账号的前面，作为用户账户的一个标记，不需要可以不填
 - min_pay_filter: 低于指定金额的不记账
