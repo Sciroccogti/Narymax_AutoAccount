@@ -14,7 +14,7 @@ from util import write_dst_template_file
 # 变成标准模板 + "交易信息","交易对方"
 # | 交易类型 | 日期 | 一级分类名称 | 二级分类名称 | 账户 | *账户 | 金额 | 成员 | 支付渠道 | 项目 | 备注 | +   "交易信息","交易对方"
 #  最后2列是自定义的
-def convert_jindong_bill_to_standard_accountlist(df,info_data):
+def convert_jingdong_bill_to_standard_accountlist(df,info_data):
     # 剔除京东与微信支付重复导出的账单
     df = df.drop(df[df['收/付款方式'] == '微信支付'].index)  # 删除指定行
     df = df.drop(df[df['交易状态'] != '交易成功'].index)  # 删除交易没有成功的账单
@@ -40,16 +40,16 @@ def convert_jindong_bill_to_standard_accountlist(df,info_data):
 
     return df
 
-def jindong_papbill_auto_classify(df,info_data):
+def jingdong_papbill_auto_classify(df,info_data):
 
     #  对标准模板进行数据预处理，排序，数据清洗。。。
     df = info_data.preprocess_standardize_tample(df)
 
     # 筛选还京东白条  交易类型： 不计收支 -> 转账 （类似还信用卡）
-    condition_jindongcrediet = (df['交易类型'] == '不计收支') & (df['交易信息'] == '白条主动还款') & (df['交易对方'] == '京东金融')
-    df.loc[condition_jindongcrediet, '交易类型'] = "转账"
-    df.loc[condition_jindongcrediet, '账户'] = df.loc[condition_jindongcrediet, '账户'] + "还白条"
-    df.loc[condition_jindongcrediet, '*账户'] = "京东白条"
+    condition_jingdongcrediet = (df['交易类型'] == '不计收支') & (df['交易信息'] == '白条主动还款') & (df['交易对方'] == '京东金融')
+    df.loc[condition_jingdongcrediet, '交易类型'] = "转账"
+    df.loc[condition_jingdongcrediet, '账户'] = df.loc[condition_jingdongcrediet, '账户'] + "还白条"
+    df.loc[condition_jingdongcrediet, '*账户'] = "京东白条"
 
     condition_cashout = (df['交易类型'] == '不计收支') & (df['账户'].str.contains('代付')) & (df['交易信息'] == '京东钱包余额提现')
     df.loc[condition_cashout, '交易类型'] = '转账'
@@ -81,7 +81,7 @@ def jindong_papbill_auto_classify(df,info_data):
 
     return df
 
-def jindong_bill_conv(df,info_data,dst_app = '随手记'):
+def jingdong_bill_conv(df,info_data,dst_app = '随手记'):
 
     # df 列说明
     # 交易时间, 交易分类, 商户名称, 交易说明, 收 / 支, 金额, 收 / 付款方式, 交易状态, 交易订单号, 商家订单号, 备注
@@ -91,10 +91,10 @@ def jindong_bill_conv(df,info_data,dst_app = '随手记'):
     # | 交易类型 | 日期 | 一级分类名称 | 二级分类名称 | 账户 | *账户 | 金额 | 成员 | 支付渠道 | 项目 | 备注 | +    "交易信息","交易对方"
     #  最后2列是自定义的
 
-    df = convert_jindong_bill_to_standard_accountlist(df,info_data)
+    df = convert_jingdong_bill_to_standard_accountlist(df,info_data)
 
     # 自动分类，对标准模板进行数据处理
-    df = jindong_papbill_auto_classify(df,info_data)
+    df = jingdong_papbill_auto_classify(df,info_data)
 
     # 写入指定app 模板
     write_dst_template_file(df, src_name='京东', dst_app_name=dst_app)
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     userInfo =  InfoClass(user="小明")
     # xls_path = "D:\\Roots\\2024-01-29pay_list_csv_import\\my_personal_data\\config\\config.xls"
     # userInfo.load_config_file(xls_path)
-    df = jindong_bill_conv(df,userInfo)
+    df = jingdong_bill_conv(df,userInfo)
     #  导出随手记web 格式账单
     # with pd.ExcelWriter(op.join(get_current_path(), '随手记导入京东账单.xls')) as writer:
     #     # 不保存序号

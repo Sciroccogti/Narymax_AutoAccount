@@ -8,7 +8,7 @@ from util import check_first_column_contains_string
 from util import get_current_path
 from wechat_paybill_convert import wechat_paybill_conv_dev
 from ali_paybill_convert import ali_paybill_conv_dev
-from jindong_bill_convert import jindong_bill_conv
+from jingdong_bill_convert import jingdong_bill_conv
 import sys
 import warnings
 
@@ -99,7 +99,7 @@ def paylist_convert(info_data):
             df.fillna('', inplace=True)
 
             df = init_df_columns(df, 18, True)
-            jindong_bill_conv(df,info_data,dst_app)
+            jingdong_bill_conv(df,info_data,dst_app)
         else:
             print("目前尚不支持的支付单格式")
 
