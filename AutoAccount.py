@@ -8,6 +8,7 @@ from util import check_first_column_contains_string
 from util import get_current_path
 from wechat_paybill_convert import wechat_paybill_conv_dev
 from ali_paybill_convert import ali_paybill_conv_dev
+from aliweb_paybill_convert import aliweb_paybill_conv_dev
 from jingdong_bill_convert import jingdong_bill_conv
 import sys
 import warnings
@@ -85,13 +86,29 @@ def paylist_convert(info_data):
             print("判定为微信账单")
             file_type = '微信'
             df.fillna('', inplace=True)
-            # wechat_paybill_conv(df, info_data)
             df = init_df_columns(df, 14, True)
             wechat_paybill_conv_dev(df, info_data,dst_app)
+        elif df.at[0, 'A'].find('支付宝交易记录明细查询') != -1: # 支付宝网页端
+            print("判定为支付宝网页端账单")
+            file_type = '支付宝网页端'
+            df.fillna('', inplace=True)
+            
+            # 获取交易记录明细列表的开始和结束行
+            start_idx = df[df.iloc[:, 0].astype(str).str.contains('交易记录明细列表')].index
+            # 找到包含“----”的行索引（假设第二行全是横线）
+            end_idx = df[df.iloc[:, 0].astype(str).str.contains('^-+$')].index
+            if not start_idx.empty and not end_idx.empty:
+                # 取这两行之间的数据（包含首行本身）
+                df = df.iloc[start_idx[0]:end_idx[0]]
+                df.reset_index(drop=True, inplace=True)
+            else:
+                print("未找到支付宝网页端csv的交易记录明细列表或分隔线，无法处理数据")
+                return
+            df = init_df_columns(df, 0, True)
+            aliweb_paybill_conv_dev(df, info_data,dst_app)
         elif check_first_column_contains_string(df,"支付宝"):
             file_type = '支付宝'
             df.fillna('', inplace=True)
-            # ali_paybill_conv(df,info_data)
             df = init_df_columns(df, 21, True)
             ali_paybill_conv_dev(df, info_data,dst_app)
         elif check_first_column_contains_string(df,"京东账号"):
@@ -104,7 +121,12 @@ def paylist_convert(info_data):
             print("目前尚不支持的支付单格式")
 
         button_paylist_convert.config(text="转换" + file_type + "账单完成！继续点击转换！")
-        window.mainloop()
+        # 关闭窗口或按 Ctrl+C 后自动退出
+        window.protocol("WM_DELETE_WINDOW", window.quit)
+        try:
+            window.mainloop()
+        except KeyboardInterrupt:
+            window.quit()
         return
 
 if __name__ == "__main__":

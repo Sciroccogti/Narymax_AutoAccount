@@ -28,7 +28,7 @@ def read_paylist_file():
     print(curpath)
     # 读取帐单 文件
     csv_file_path = select_file_from_tk(show_title='请选择账单文件(支付宝、微信都可以)')
-    names = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P']
+    print("选择的文件路径:", csv_file_path)
     if csv_file_path == '':
         return 'no_file',None
     else:
