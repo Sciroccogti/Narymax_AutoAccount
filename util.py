@@ -75,24 +75,25 @@ def select_file_from_tk(file_extension = '',show_title = '请选择文件'):
 
 # 屏蔽交易号 （默认不屏蔽手机号）
 # 交易号判定，连续数字大于9个,(含有手机号的需要超过11个)
-def redacte_key_number(df,colum_name,dedacte_phone_number=False,redacte_trade_number=True,redacte_show_char=''):
-        # 含有手机号码的匹配行
-        mask = extract_phone(df,colum_name)
-        df[mask] = replace_continue_number(df[mask],colum_name,num=12,replace_char=redacte_show_char)
+def redacte_key_number(df, colum_name, dedacte_phone_number=False, redacte_trade_number=True, redacte_show_char=''):
+    # 含有手机号码的匹配行
+    mask = extract_phone(df, colum_name)
+    df[mask] = replace_continue_number(df[mask], colum_name, num=12, replace_char=redacte_show_char)
 
-        # 不含有手机号码的行
-        df[~mask] = replace_continue_number(df[~mask],colum_name,replace_char=redacte_show_char)
-        return df
+    # 不含有手机号码的行
+    df[~mask] = replace_continue_number(df[~mask], colum_name, replace_char=redacte_show_char)
+    return df
 
 
 def extract_phone(df,column_name):
     """正则提取包含手机的mask"""
-    pattern_middle = r'\D1(3[0-9]|5[0-3,5-9]|7[1-3,5-8]|8[0-9])\d{8}\D'  # 匹配中间连续11位数字  aa1731234567bb
-    mask_middle = df[column_name].str.extract(pattern_middle)
-    pattern_begin = r'^1(3[0-9]|5[0-3,5-9]|7[1-3,5-8]|8[0-9])\d{8}\D'  # 匹配从头开始连续11位数字 1731234567aa
-    mask_begin = df[column_name].str.extract(pattern_begin)
-    pattern_end = r'\D1(3[0-9]|5[0-3,5-9]|7[1-3,5-8]|8[0-9])\d{8}$'  # 匹配连续11位数字然后结束  aabb1731234567
-    mask_end = df[column_name].str.extract(pattern_end)
+    # (?:) 表示非捕获组
+    pattern_middle = r'\D1(?:3[0-9]|5[0-3,5-9]|7[1-3,5-8]|8[0-9])\d{8}\D'  # 匹配中间连续11位数字  aa1731234567bb
+    mask_middle = df[column_name].str.contains(pattern_middle)
+    pattern_begin = r'^1(?:3[0-9]|5[0-3,5-9]|7[1-3,5-8]|8[0-9])\d{8}\D'  # 匹配从头开始连续11位数字 1731234567aa
+    mask_begin = df[column_name].str.contains(pattern_begin)
+    pattern_end = r'\D1(?:3[0-9]|5[0-3,5-9]|7[1-3,5-8]|8[0-9])\d{8}$'  # 匹配连续11位数字然后结束  aabb1731234567
+    mask_end = df[column_name].str.contains(pattern_end)
     mask = mask_middle | mask_begin | mask_end
     print("phone number extracted\n")
     print(df[mask])
@@ -105,60 +106,83 @@ def replace_continue_number(df, colum_name, num=9, replace_char=''):
     matches = df[colum_name].str.extractall(pattern)
     print(matches)  # 打印匹配的结果
 
-    df[colum_name] = df[colum_name].str.replace(pattern, replace_char)
+    df.loc[:, colum_name] = df[colum_name].str.replace(pattern, replace_char)
     print("消除连续出现", num, "位及以上的数字，并且替换成\" ", replace_char, "\"\n")
     return df
 
 
-def auto_calssify_by_keyword(df,first_classify_col='分类',second_classify_col='子分类', match_list_rule=[], trade_type = '交易类型',redfund_income_classify = True):
-    df[first_classify_col] = df[first_classify_col].astype(str)
-    df[second_classify_col] = df[second_classify_col].astype(str)
-    if match_list_rule is None:
+def use_match_rule(df: pd.DataFrame, match_list_rule: list, keyword: str = "支", first_classify_col='一级分类名称', second_classify_col='二级分类名称', trade_type='交易类型'):
+    """
+    使用匹配规则对DataFrame进行分类
+    :param df: DataFrame
+    :param match_list_rule: 匹配规则列表
+    :param first_classify_col: 一级分类列名
+    :param second_classify_col: 二级分类列名
+    :return: 分类后的DataFrame
+    """
+    if not match_list_rule:
         print('没有找到匹配模板')
         return df
-    else:
-        outcome_autoclass_total_num = 0
-        income_autoclass_total_num = 0
-        for list_vob in match_list_rule:
 
-            # 使用列表推导式删除空字符串
-            list = [str(item) for item in list_vob if item != '' or item != np.nan]
-            first_class = list[1]
-            second_class =list[2]
+    autoclass_total_num = 0
+    for list_vob in match_list_rule:
 
-            if len(list) <= 3:
-                continue
-            else:
-                # 支出自动分类
-                result = (df['备注'].str.contains(list2orString(list[3:]))) & (df[trade_type].str.contains('支'))
+        # 使用列表推导式删除空字符串
+        list_str = [
+            "" if (i == 2 and (item is np.nan or pd.isna(item))) # 子分类（下标为2）允许留空
+                else str(item)
+            for i, item in enumerate(list_vob)
+            if not (i != 2 and (item == "" or pd.isna(item)))
+        ]
+        first_class = list_str[1]
+        second_class = list_str[2]
+
+        if len(list_str) <= 3:
+            continue
+        else:
+            # 支出自动分类
+            result = (df['备注'].str.contains(list2orString(list_str[3:]))) & (df[trade_type].str.contains(keyword))
+            df.loc[result, first_classify_col] = first_class
+            df.loc[result, second_classify_col] = second_class
+            modified_outcome_rows = df.loc[result]
+            if not modified_outcome_rows.empty:
                 df.loc[result, first_classify_col] = first_class
                 df.loc[result, second_classify_col] = second_class
-                modified_outcome_rows = df.loc[result]
-                if not modified_outcome_rows.empty:
-                    df.loc[result, first_classify_col] = first_class
-                    df.loc[result, second_classify_col] = second_class
-                    outcome_autoclass_total_num += len(modified_outcome_rows)
-                    print("Modified outcome rows:")
-                    print(modified_outcome_rows)
-        print(f"Total modified outcome rows: {outcome_autoclass_total_num}")
-        print("\n \n ")
+                autoclass_total_num += len(modified_outcome_rows)
+                print("Modified outcome rows:")
+                print(modified_outcome_rows)
+    print(f"Total modified outcome rows: {autoclass_total_num}")
+    print("\n \n ")
 
-        # 收入退款分类
-        if redfund_income_classify:
-            result = df[trade_type].str.contains('收') & df['备注'].str.contains('退款')
+    return df
+
+def auto_calssify_by_keyword(df: pd.DataFrame, first_classify_col='分类', second_classify_col='子分类',
+                              match_list_rule=[], trade_type='交易类型', redfund_income_classify=True, income_match_rule=[]):
+    df[first_classify_col] = df[first_classify_col].apply(lambda x: str(x) if pd.notnull(x) else np.nan)
+    df[second_classify_col] = df[second_classify_col].apply(lambda x: str(x) if pd.notnull(x) else np.nan)
+    # 支出自动分类
+    df = use_match_rule(df, match_list_rule, "支", first_classify_col, second_classify_col, trade_type=trade_type)
+    # 收入自动分类
+    df = use_match_rule(df, income_match_rule, "收入", first_classify_col, second_classify_col, trade_type=trade_type)
+
+    income_autoclass_total_num = 0
+
+    # 收入退款分类
+    if redfund_income_classify:
+        result = df[trade_type].str.contains('收') & df['备注'].str.contains('退款')
+        df.loc[result, first_classify_col] = "退款"
+        df.loc[result, second_classify_col] = "退款"
+        modified_income_rows = df.loc[result]
+        if not modified_income_rows.empty:
             df.loc[result, first_classify_col] = "退款"
             df.loc[result, second_classify_col] = "退款"
-            modified_income_rows = df.loc[result]
-            if not modified_income_rows.empty:
-                df.loc[result, first_classify_col] = "退款"
-                df.loc[result, second_classify_col] = "退款"
-                income_autoclass_total_num += len(modified_income_rows)
-                print("Modified income rows:")
-                print(modified_income_rows)
+            income_autoclass_total_num += len(modified_income_rows)
+            print("Modified income rows:")
+            print(modified_income_rows)
 
-        print(f"Total modified income rows: {income_autoclass_total_num}")
-        print("\n \n ")
-        return df
+    print(f"Total modified income rows: {income_autoclass_total_num}")
+    print("\n \n ")
+    return df
 
 
 def add_count_prefix_character(df, account_name='', account_name2 ='',prefix_character=''):
@@ -250,42 +274,6 @@ def delete_much_than_9_nums():
     print(filtered_rows)
 
 
-#  提取包含手机的mask
-def extract_phone(df, column_name):
-    pattern_middle = r'\D1(3[0-9]|5[0-3,5-9]|7[1-3,5-8]|8[0-9])\d{8}\D'  # 匹配中间连续11位数字  aa1731234567bb
-    mask_middle = df[column_name].str.extract(pattern_middle, expand=False)
-    pattern_begin = r'^1(3[0-9]|5[0-3,5-9]|7[1-3,5-8]|8[0-9])\d{8}\D'  # 匹配从头开始连续11位数字 1731234567aa
-    mask_begin = df[column_name].str.extract(pattern_begin, expand=False)
-    pattern_end = r'\D1(3[0-9]|5[0-3,5-9]|7[1-3,5-8]|8[0-9])\d{8}$'  # 匹配连续11位数字然后结束  aabb1731234567
-    mask_end = df[column_name].str.extract(pattern_end, expand=False)
-    mask = mask_middle | mask_begin | mask_end
-    print("phone number extracted\n")
-    print(df[mask])
-    return mask
-
-
-def replace_continue_number(df, colum_name, num=9, replace_char=''):
-    pattern = r'(\d{{{0},}})'.format(num)  # 匹配连续出现num位及以上数字
-    # 提取连续出现num位及以上数字的行
-    matches = df[colum_name].str.extractall(pattern)
-    print(matches)  # 打印匹配的结果
-
-    df[colum_name] = df[colum_name].str.replace(pattern, replace_char)
-    print("消除连续出现", num, "位及以上的数字，并且替换成\" ", replace_char, "\"\n")
-    return df
-
-
-# 屏蔽交易号 （默认不屏蔽手机号）
-# 交易号判定，连续数字大于9个,(含有手机号的需要超过11个)
-def redacte_key_number(df, colum_name, dedacte_phone_number=False, redacte_trade_number=True, redacte_show_char=''):
-    # 含有手机号码的匹配行
-    mask = extract_phone(df, colum_name)
-    df[mask] = replace_continue_number(df[mask], colum_name, num=12, replace_char=redacte_show_char)
-
-    # 不含有手机号码的行
-    df[~mask] = replace_continue_number(df[~mask], colum_name, replace_char=redacte_show_char)
-    return df
-
 def convert_back_to_wechat_style_account(df):
 
     # 确定两列 "商品" "交易对方"
@@ -336,7 +324,7 @@ def write_dst_template_file(df, src_name, dst_app_name):
         )
         print("完成 " + dst_app_name + "账单适配")
 
-        file_name = datetime.now().strftime('%Y-%m-%d %H_%M_%S ') + dst_app_name + '导入' + src_name +'.xlsx'
+        file_name = datetime.now().strftime('%Y-%m-%d %H_%M_%S ') + src_name + '导入' + dst_app_name + '.xlsx'
 
         save_pd_to_xls(df, file_name)
         print("导出文件完成: " + op.join(str(get_current_path()), file_name))

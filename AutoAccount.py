@@ -72,9 +72,13 @@ def create_config(info_data):
 
     window.mainloop()
 
-def paylist_convert(info_data):
+def paylist_convert(info_data: InfoClass):
     file_type = ''
     flag, df = read_paylist_file()
+    if flag == 'no_file' or df is None:
+        messagebox.showerror("错误", "读取支付单文件失败，请检查文件路径或格式！")
+        print("读取支付单文件失败，请检查文件路径或格式！")
+        return
     # 获取当前下拉选择记账app 名称
     dst_app = selected_value.get()
     if flag == 'no_file':
@@ -85,13 +89,13 @@ def paylist_convert(info_data):
         if df.at[0, 'A'].find('微信') != -1:
             print("判定为微信账单")
             file_type = '微信'
-            df.fillna('', inplace=True)
+            df.loc[:, df.dtypes == 'str'] = df.loc[:, df.dtypes == 'str'].fillna('')
             df = init_df_columns(df, 14, True)
             wechat_paybill_conv_dev(df, info_data,dst_app)
         elif df.at[0, 'A'].find('支付宝交易记录明细查询') != -1: # 支付宝网页端
             print("判定为支付宝网页端账单")
             file_type = '支付宝网页端'
-            df.fillna('', inplace=True)
+            df.loc[:, df.dtypes == 'str'] = df.loc[:, df.dtypes == 'str'].fillna('')
             
             # 获取交易记录明细列表的开始和结束行
             start_idx = df[df.iloc[:, 0].astype(str).str.contains('交易记录明细列表')].index
@@ -105,7 +109,7 @@ def paylist_convert(info_data):
                 print("未找到支付宝网页端csv的交易记录明细列表或分隔线，无法处理数据")
                 return
             df = init_df_columns(df, 0, True)
-            aliweb_paybill_conv_dev(df, info_data,dst_app)
+            aliweb_paybill_conv_dev(df, info_data, dst_app)
         elif check_first_column_contains_string(df,"支付宝"):
             file_type = '支付宝'
             df.fillna('', inplace=True)
