@@ -3,7 +3,7 @@
 @author Sciroccogti (scirocco_gti@yeah.net)
 @brief 
 @date 2025-07-20 17:20:36
-@modified: 2025-07-25 00:34:09
+@modified: 2025-07-26 01:11:33
 '''
 
 import pandas as pd
@@ -38,8 +38,8 @@ def convert_aliweb_paybill_to_standard_accountlist(df: pd.DataFrame, info_data: 
                          "paymentMethod_values": "支付渠道", "projectName_values": "项目"})
     df = df.reindex(
         columns=["交易类型", "日期", "一级分类名称", "二级分类名称", "账户", "*账户", "金额", "成员", "支付渠道",
-                 "项目", "备注", "商品", "交易对方", "交易信息", "交易状态"])
-    df['备注'] = df["商品"].fillna('') + df['备注'].fillna('') + '#' + df['交易对方'].fillna('') + df['交易信息'].fillna('')
+                 "项目", "备注", "商品", "交易对方", "交易信息", "交易状态", "商家订单号"])
+    df['备注'] = df["商品"].fillna('') + df['备注'].fillna('') + '#' + df['交易对方'].fillna('') + df['交易信息'].fillna('') + '#' + df['商家订单号'].fillna('')
 
     return df
 
