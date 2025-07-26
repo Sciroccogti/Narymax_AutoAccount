@@ -154,7 +154,7 @@ class InfoClass:
             ["user", self.user, "记账人"],
             ["character", self.character, "记账人代号，随便取一个字母"],
             ["min_pay_filter", self.min_pay_filter, "最小筛选金额"],
-            ["use_suggesstion_classify", self.use_suggestion_classify, "使用原始账单默认的分类"],
+            ["use_suggestion_classify", self.use_suggestion_classify, "使用原始账单默认的分类"],
             ["default_proj_name", self.default_proj_name, "默认支出的项目名称"],
             ["redacte_show_string", self.redacte_show_string, "屏蔽交易号码，显示字符，连续数字大于9个"],
             ["sort_by_date", self.sort_by_date, "是否按日期排序"],
