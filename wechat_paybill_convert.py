@@ -14,28 +14,33 @@ from util import write_dst_template_file
 # 2024-04-02 18:31:00,商户消费,肯德基,KFC全家桶,支出,¥32.90,中国银行信用卡(0123),已存入零钱,"42000012345890	","202405666678",/
 # 变成标准模板
 # | 交易类型 | 日期 | 一级分类名称 | 二级分类名称 | 账户 | *账户 | 金额 | 成员 | 支付渠道 | 项目 | 备注 | +  "交易信息", "交易对方","当前状态"
-def convert_wechat_paybill_to_standard_accountlist(df, info_data):
+def convert_wechat_paybill_to_standard_accountlist(df: pd.DataFrame, info_data: InfoClass):
     df['备注'] = df['备注']+ df['商品']+ '#' +df['交易对方']
     df = df.sort_values('交易时间')
 
     # 定义新列的占位值
-    secondClassName_values = ["未分类"] * len(df)
+    secondClassName_values = [""] * len(df)
     account2_values = [""] * len(df)
     user_values = [info_data.user] * len(df)
     paymentMethod_values = ["微信"] * len(df)
     projectName_values = [""] * len(df)  # 空字符串
-    # 一步完成列名修改、增加新列和重新排序
-    df = (
-        df.rename(columns={"交易时间": "日期", "交易类型":"一级分类名称","收/支": "交易类型", "金额(元)": "金额", "支付方式": "账户","商品":"交易信息"})
-        .assign(secondClassName_values=secondClassName_values, account2_values=account2_values, user_values=user_values,
-                paymentMethod_values=paymentMethod_values, projectName_values=projectName_values)
-        .rename(columns={"secondClassName_values": "二级分类名称", "account2_values": "*账户", "user_values": "成员",
+    # 完成列名修改、增加新列和重新排序
+    if info_data.use_suggestion_classify: # 使用原始账单默认的分类
+        df = df.rename(columns={"交易类型": "一级分类名称"})
+        df['secondClassName_values'] = df['一级分类名称'].astype(str)
+    else:
+        df["备注"] += "#" + df["交易类型"].astype(str)
+        df = df.drop(columns=["交易类型"])
+        df['一级分类名称'] = [""] * len(df)  # 空字符串
+
+    df = df.rename(columns={"交易时间": "日期", "收/支": "交易类型", "金额(元)": "金额", "支付方式": "账户", "商品": "交易信息"})
+    df = df.assign(secondClassName_values=secondClassName_values, account2_values=account2_values, user_values=user_values,
+                   paymentMethod_values=paymentMethod_values, projectName_values=projectName_values)
+    df = df.rename(columns={"secondClassName_values": "二级分类名称", "account2_values": "*账户", "user_values": "成员",
                          "paymentMethod_values": "支付渠道", "projectName_values": "项目"})
-        .reindex(
-            columns=["交易类型", "日期", "一级分类名称", "二级分类名称", "账户", "*账户", "金额", "成员", "支付渠道",
-                     "项目", "备注", "交易信息", "交易对方","当前状态"])
-    )
-    df['二级分类名称'] = df['一级分类名称'].astype(str)
+    df = df.reindex(
+        columns=["交易类型", "日期", "一级分类名称", "二级分类名称", "账户", "*账户", "金额", "成员", "支付渠道",
+                 "项目", "备注", "交易信息", "交易对方", "当前状态"])
 
     return df
 
@@ -62,7 +67,7 @@ def wechat_paybill_auto_classify(df,info_data):
 
     # 支出自动分类
     df = auto_calssify_by_keyword(df, first_classify_col='一级分类名称', second_classify_col='二级分类名称',
-                                  match_list_rule=info_data.classify_csv_rule)
+                                  match_list_rule=info_data.classify_csv_rule, income_match_rule=info_data.income_classify_csv_rule)
 
     # 默认支出项目名称
     if info_data.default_proj_name != '':

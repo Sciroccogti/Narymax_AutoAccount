@@ -3,7 +3,7 @@
 @author Sciroccogti (scirocco_gti@yeah.net)
 @brief 
 @date 2025-07-20 17:20:36
-@modified: 2025-07-26 01:11:33
+@modified: 2025-07-26 20:40:06
 '''
 
 import pandas as pd
@@ -51,7 +51,7 @@ def aliweb_paybill_auto_classify(df: pd.DataFrame, info_data: InfoClass):
     df['账户'] = '支付宝'
 
     # 删除还款失败、交易关闭 的 数据
-    mask = (~df['交易状态'].str.contains('交易关闭|还款失败|已关闭'))
+    mask = (~df['交易状态'].str.contains('还款失败|已关闭'))
     df = df[mask]
 
     # 删除自动从支付宝账户余额转入到余利宝的数据（一般是收的红包自动转入余额宝）(收支分类是不确定的)
