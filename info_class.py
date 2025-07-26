@@ -78,8 +78,8 @@ class InfoClass:
                 self.character = value_str
             if 'min_pay_filter' in str(parameter):
                 self.min_pay_filter = float(value)
-            if 'use_suggertion_classify' in str(parameter):
-                self.use_suggertion_classify = bool(value)
+            if 'use_suggestion_classify' in str(parameter):
+                self.use_suggestion_classify = bool(value)
             if 'flag_outcome_classify_demo' in str(parameter):
                 self.flag_outcome_classify_demo = bool(value)
             if 'flag_income_classify_demo' in str(parameter):
