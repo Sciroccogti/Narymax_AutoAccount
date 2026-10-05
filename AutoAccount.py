@@ -90,7 +90,7 @@ def paylist_convert(info_data: InfoClass):
             print("判定为微信账单")
             file_type = '微信'
             df.loc[:, df.dtypes == 'str'] = df.loc[:, df.dtypes == 'str'].fillna('')
-            df = init_df_columns(df, 14, True)
+            df = init_df_columns(df, 15, True)
             wechat_paybill_conv_dev(df, info_data,dst_app)
         elif df.at[0, 'A'].find('支付宝交易记录明细查询') != -1: # 支付宝网页端
             print("判定为支付宝网页端账单")

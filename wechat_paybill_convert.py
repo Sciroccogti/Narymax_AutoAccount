@@ -50,7 +50,8 @@ def wechat_paybill_auto_classify(df,info_data):
     df = info_data.preprocess_standardize_tample(df)
 
     # 去金额里面的人民币符号 ¥ 和 备注的 / 一级分类的 |
-    df['金额'] = df['金额'].str.replace('¥', '')
+    if df['金额'].dtype == 'str':
+        df['金额'] = df['金额'].str.replace('¥', '')
     df['备注'] = df['备注'].str.replace('/', '')
     df['一级分类名称'] = df['一级分类名称'].str.replace('|', '')
 

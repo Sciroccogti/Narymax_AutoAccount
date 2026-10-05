@@ -3,7 +3,7 @@
 @author Sciroccogti (scirocco_gti@yeah.net)
 @brief 
 @date 2025-07-20 17:20:36
-@modified: 2025-10-12 11:38:36
+@modified: 2026-02-22 21:55:45
 '''
 
 import pandas as pd
@@ -56,9 +56,9 @@ def aliweb_paybill_auto_classify(df: pd.DataFrame, info_data: InfoClass):
 
     # 删除自动从支付宝账户余额转入到余利宝的数据（一般是收的红包自动转入余额宝）(收支分类是不确定的)
     # 设置红包直接转到余额宝，而不是先转到支付宝账户余额，再转移到余额宝
-    mask = df['交易对方'].str.contains('红包')
-    mask &= df['商品'].str.contains('转账收款到余额宝')
-    mask &= df['交易类型'].str.contains('不计收支')
+    # mask = df['交易对方'].str.contains('红包')
+    # mask &= df['商品'].str.contains('转账收款到余额宝')
+    mask = df['交易类型'].str.contains('不计收支')
     df = df[~mask]
     mask = df['交易类型'].str.contains('收入') & df['账户'].isin(['账户余额', np.nan])
     df['账户'] = df['账户'].astype(str)
