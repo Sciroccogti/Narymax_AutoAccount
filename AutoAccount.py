@@ -6,6 +6,7 @@ from util import print_dog_head
 from util import read_paylist_file
 from util import check_first_column_contains_string
 from util import get_current_path
+from util import get_saved_account_app, save_app_preference
 from wechat_paybill_convert import wechat_paybill_conv_dev
 from ali_paybill_convert import ali_paybill_conv_dev
 from aliweb_paybill_convert import aliweb_paybill_conv_dev
@@ -30,6 +31,7 @@ def init_df_columns(df, skiprows=0, use_column_name = True):
     return df
 
 def update_label_app(selected_value):
+    save_app_preference('selected_account_app', selected_value)
     label_app.config(text="选择配置账本: " + selected_value)
     if (selected_value == "随手记") | (selected_value == "钱迹") | (selected_value == "有鱼记账")|(selected_value == "挖财记账")|(selected_value == "百事AA记账"):
         for button in button_list:
@@ -75,6 +77,8 @@ def create_config(info_data):
 def paylist_convert(info_data: InfoClass):
     file_type = ''
     flag, df = read_paylist_file()
+    if flag == 'no_file':
+        return
     if flag == 'no_file' or df is None:
         messagebox.showerror("错误", "读取支付单文件失败，请检查文件路径或格式！")
         print("读取支付单文件失败，请检查文件路径或格式！")
@@ -176,12 +180,12 @@ if __name__ == "__main__":
 
     # Create a dropdown list
     selected_value = tk.StringVar(window)
-    selected_value.set(options[0])
+    selected_value.set(get_saved_account_app(options))
     dropdown_menu = tk.OptionMenu(window, selected_value, *options, command=update_label_app)
     dropdown_menu.pack()
 
     # Create a label
-    label_app = tk.Label(window, text="Selected value: " + selected_value.get())
+    label_app = tk.Label(window, text="选择配置账本: " + selected_value.get())
     label_app.pack()
 
     current_path = get_current_path()

@@ -1,6 +1,7 @@
 # 常用util
 import os
 import csv
+import json
 import tkinter as tk
 from tkinter import filedialog
 import sys
@@ -19,6 +20,35 @@ def get_current_path():
         application_path = os.path.dirname(__file__)
     return application_path
 
+
+def load_app_preferences():
+    path = op.join(get_current_path(), 'config', 'app_preferences.json')
+    try:
+        with open(path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def save_app_preference(key, value):
+    path = op.join(get_current_path(), 'config', 'app_preferences.json')
+    preferences = load_app_preferences()
+    preferences[key] = value
+    try:
+        os.makedirs(op.dirname(path), exist_ok=True)
+        with open(path + '.tmp', 'w', encoding='utf-8') as file:
+            json.dump(preferences, file, ensure_ascii=False, indent=2)
+        os.replace(path + '.tmp', path)
+    except OSError as error:
+        print('无法保存使用偏好:', error)
+
+
+def get_saved_account_app(options):
+    saved = load_app_preferences().get('selected_account_app')
+    return saved if saved in options else options[0]
+
+
 # 读取微信、支付宝账单到pandas DataFrame
 def read_paylist_file():
     # 打印路径
@@ -27,10 +57,10 @@ def read_paylist_file():
     curpath = current_path
     print(curpath)
     # 读取帐单 文件
-    csv_file_path = select_file_from_tk(show_title='请选择账单文件(支付宝、微信都可以)')
+    csv_file_path = select_file_from_tk(show_title='请选择账单文件(支付宝、微信都可以)', remember_import=True)
     print("选择的文件路径:", csv_file_path)
     names = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q']
-    if csv_file_path == '':
+    if not csv_file_path:
         return 'no_file',None
     else:
         csv_file_path = os.path.abspath(csv_file_path)
@@ -54,12 +84,17 @@ def read_paylist_file():
 
 # 通过tkinter选择文件，返回文件路径
 # file_extension = ".txt"
-def select_file_from_tk(file_extension = '',show_title = '请选择文件'):
+def select_file_from_tk(file_extension='', show_title='请选择文件', remember_import=False):
     root = tk.Tk()
     root.withdraw()  # 隐藏主窗口
     # file_path = filedialog.askopenfilename()  # 打开文件选择对话框
     curpath = os.path.dirname(os.path.realpath(__file__))
     curpath = get_current_path()
+
+    if remember_import:
+        saved_directory = load_app_preferences().get('import_directory')
+        if isinstance(saved_directory, str) and os.path.isdir(saved_directory):
+            curpath = saved_directory
 
     try:
         if file_extension != '':
@@ -69,7 +104,12 @@ def select_file_from_tk(file_extension = '',show_title = '请选择文件'):
         # file_path = filedialog.askopenfilename(filetypes=[("csv格式", "*.csv")])  # 打开指定格式
     except Exception as e:
         print("Error selecting file:", e)
-        file_path = None
+        file_path = ''
+    finally:
+        root.destroy()
+
+    if file_path and remember_import:
+        save_app_preference('import_directory', os.path.dirname(os.path.abspath(file_path)))
 
     return file_path
 

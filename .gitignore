@@ -1,7 +1,9 @@
 /.idea/*
-/__pycache__/*
+**/__pycache__/*
 /build/*
 /dist/*
 *.spec
 /*.csv
 /*.xlsx
+/config/app_preferences.json
+/config/app_preferences.json.tmp
